@@ -1,10 +1,6 @@
 import React from "react";
 import "./Form.css";
 
-/**
- * end point: mode function
- */
-
 class Form extends React.Component {
   constructor(){
     super();
@@ -12,19 +8,15 @@ class Form extends React.Component {
       values: '',
       operation: '',
       result: null,
+      error: false
     };
   }
 
   handleValues = (event) => {
-    //console.log('test');
-    let {name, value} = event.target;
-    //value = value.split(',').map(element => Number(element));
-    console.log(`handleValues: typeof(values): ${typeof(value)}`);
-
+    const {name, value} = event.target;
     this.setState({
       [name]: value,  
-    })
-    
+    })    
   }
 
   handleOperation = (event) => {
@@ -37,29 +29,35 @@ class Form extends React.Component {
   handleCalculate = (event) => {
     event.preventDefault();
     let {values, operation} = this.state;
-    //const {values, operation} = event;  //can set values from state or event
+    let inputProvided = true;
+    //const {values, operation} = event;  //can set values from state or event, is either preferable?
+
+    //check that user provided input
+    if (operation === '' || values === '') inputProvided = false;
+  
+    //process and validate the valuess provided
     values = values.split(',').map(element => Number(element)).sort((a,b)=>{return a-b});
-    console.log(`handleCalculate: values: ${values}`);
-    console.log(`handleCalculate: operation: ${operation}`);
-    
-    //hardcoding sum for initial test
-    
-    this.setState({
-      result: this.calculate(operation, values)
+    let valuesAreValid = values.every( value => {
+      return !Number.isNaN(value); 
     });
-
-
-    //sum:  sum = arr.reduce(function (a, b) {return a + b;}, 0);.
-    //average: divide by length
-    //mode
     
+    if (inputProvided && valuesAreValid){      
+      this.setState({
+        result: this.calculate(operation, values),
+        error: false,
+        values: '',
+        operation: ''
+      });
+    }else{
+      this.setState({
+        error: true
+      });
+    }
   }
 
   calculate = (operation, values) => {
-    //let sum = values.reduce((a,b)=>{return a+b});
     return (operation === 'sum') ? values.reduce((a,b)=>{return a+b}) :
-           (operation === 'average') ? values.reduce((a,b)=>{return a+b})/values.length : this.findMode(values);
-    
+           (operation === 'average') ? values.reduce((a,b)=>{return a+b})/values.length : this.findMode(values);    
   }
 
   findMode = (values) => {
@@ -73,34 +71,29 @@ class Form extends React.Component {
 
     let arr = Object.values(counts);    
     let max = Math.max(...arr);    
-    return Object.keys(counts).filter( k => counts[k] === max).join(',');
-    
-    //console.log(`findMode: mode: ${mode}`);
-    //return mode.join(',');
+    return Object.keys(counts).filter( k => counts[k] === max).join(',');    
     //https://stackoverflow.com/questions/52898456/simplest-way-of-finding-mode-in-javascript
   }
 
   render() {
-    const {values, operation} = this.state;
-    console.log(`render: values: ${this.state.values}`);
-    console.log(`render: operation: ${this.state.operation}`);
-    console.log(`render: result: ${this.state.result}`);
-
-    let resultText = (this.state.result === null) ? '' : this.state.result;
+    const {result, error, values, operation} = this.state;
+    let resultText = (error === true) ? 'Invalid input.' : result;
+    let classValue = (error === true) ? 'error' : '';
     
     return (
+      <>
       <form onSubmit={this.handleCalculate}>
-        <input id="values" name="values" value={values} type="text" onChange={this.handleValues}/>
-        <select id="operation" name="operation" value={operation} onChange={this.handleOperation}>
+        <input class={classValue} id="values" name="values" value={values} type="text" onChange={this.handleValues}/>
+        <select class={classValue} id="operation" name="operation" value={operation} onChange={this.handleOperation}>
           <option value=""></option>
           <option value="sum">sum</option>
           <option value="average">average</option>
           <option value="mode">mode</option>
         </select>
-        <button type="submit">Calculate</button>
-        <h2>{resultText}</h2>
+        <button type="submit">Calculate</button>        
       </form>
-      
+      <h2>{resultText}</h2>
+      </>
     );
   }
 }
